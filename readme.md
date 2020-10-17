@@ -20,6 +20,6 @@ Please pay attention to spelling of the column names.
 
 Make sure that that **data file** is kept strictly **confidential** - do not put it on GitHub or any other public space. When you work with it, it must stay on safe, encrypted computer, best if it is on your trust computer.
 
-PDF output also must be kept strictly confidential.  The CSV output is less risky, but still contains actual links used - and even though patient names cannot be learned, it would be a bad idea to expose actual links used to public.  
+**PDF output** also must be kept strictly confidential.  The **CSV output** is less risky, but still contains actual links used - and even though patient names cannot be learned, it would be a bad idea to expose actual links used to public.  
 
 For that reason repository is set up not to track and upload input and output files.
