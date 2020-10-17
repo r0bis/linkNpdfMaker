@@ -1,0 +1,93 @@
+
+
+# `r paste(title.1,oFirstName,oLastName)`
+
+\vspace{50mm}
+
+```{r include=FALSE}
+# chunks are not to be included because otherwise echo gets created in main document
+# creating QR-code for Survey-1 (the short one)
+fname <- paste0("./tmp/","SV1-",oIDNumber,".png")
+fname <- gsub("[ ]", "_",fname)
+
+link <- oLongLink1
+shortlink <- oShortLink1
+shortlinkname <- oShortLink1name
+
+png(file = fname, width = 150, height = 150,type="cairo")
+  par(mar=c(0,0,0,0))
+  image(qrencode_raster(link), 
+    asp=1, col=c("white", "black"), axes=FALSE, 
+    xlab="", ylab="")
+dev.off()
+
+
+```
+
+```{r out.width='100%', fig.align='center'}
+knitr::include_graphics(fname)
+```
+
+\vspace{10mm}
+
+**Short-link:  ** [`r shortlinkname`](`r shortlink`)
+
+\vspace{25mm}
+
+**Notes:**  `r text.1`  
+
+
+
+\vspace{5mm}
+
+**Start Date:** `r format(oStartDate,'%d %B, %Y')`  
+
+
+\newpage
+
+# `r paste(title.2,oFirstName,oLastName)`
+
+\vspace{50mm}
+
+```{r include=FALSE}
+# chunks are not to be included because otherwise echo gets created in main document
+# this one creates QR code file for Survey-2 (the longer one)
+fname2 <- paste0("./tmp/","SV2-",oIDNumber,".png")
+fname2 <- gsub("[ ]", "_",fname2)
+
+link2 <- oLongLink2
+shortlink2 <- oShortLink2
+shortlinkname2 <- oShortLink2name  
+
+  png(file = fname2, width = 150, height = 150,type="cairo")
+    par(mar=c(0,0,0,0))
+    image(qrencode_raster(link2), 
+      asp=1, col=c("white", "firebrick4"), axes=FALSE, 
+      xlab="", ylab="")
+  dev.off()
+
+```
+
+```{r echo=FALSE,out.width='100%', fig.align='center'}
+knitr::include_graphics(fname2)
+```
+
+
+\vspace{10mm}
+
+**Short-link:  ** [`r shortlinkname2`](`r shortlink2`)
+
+\vspace{25mm}
+
+**Notes:**  `r text.2`  
+
+
+
+\vspace{5mm}
+
+**Start Date:** `r format(oStartDate,'%d %B, %Y')`  
+
+
+\newpage
+
+

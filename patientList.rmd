@@ -1,0 +1,177 @@
+---
+output:
+  pdf_document
+knit: (function(inputFile, encoding) {
+   rmarkdown::render(inputFile, 
+                     encoding = encoding, 
+                     output_dir = "output",
+                     output_file = paste0("patienttList_",
+                        format(Sys.time(),format="%Y-%m-%d_%H-%M"),
+                        ".pdf")) 
+                        })
+---
+ 
+\pagenumbering{gobble}
+\fontsize{14}{14}
+\selectfont
+   
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(comment = NA, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE, results = "markup")
+
+## LATEX
+#  
+
+
+# PROPERTIES - linkBase
+# MAIN - calling properties and child document
+# CHILD - layout of pages, combining variables from MAIN or PROPS, includes text elements
+
+
+
+### Libraries
+# library(readxl)
+library(tidyverse) # dplyr, purrr, stringr, forcats, readr, tidyr, ggplot2, tibble
+library(properties)
+library(knitr)
+library(lubridate)
+library(qrencoder)
+library(stringi)
+library(urlshorteneR)
+
+dataDir <- "./data/"
+
+### Functions:
+
+getlongLink <- function(x,y){
+   # combine long link base with the (patient) code 
+   z <- URLencode(paste0(y,x))
+   return(z)
+}
+
+getShortLink <- function(x){
+   z <- isgd_LinksShorten(x)
+   return(z)
+}
+
+getShortLinkName <- function(x){
+   # returns link without http(s):// part
+   z <- str_split(x, '//',simplify=TRUE)[2]
+   return(z)
+}
+
+### Reading in data and initial preprocessing
+
+# initData <- read_xlsx(paste(dataDir,"patientList.xlsx",sep=""), sheet = 1)
+initData <- read.csv(paste0(dataDir,"idConfListIn.csv"))
+props <- read.properties("patientList.properties") 
+
+# convert Excel date serial number into proper date 
+initData$StartDate <- as.Date(initData$StartDate, origin = "1899-12-30")
+initData$EndDate <- as.Date(initData$EndDate, origin = "1899-12-30")
+
+if (props$restrictToActive == "Y") {
+  initData <- initData %>% filter(is.na(EndDate))
+}
+
+link01common <- paste0(props$surveyLinkBase,props$surveyId01,"?newtest=Y&",props$survey01QID,"=")
+link02common <- paste0(props$surveyLinkBase,props$surveyId02,"?newtest=Y&",props$survey02QID,"=")
+
+initData <- initData %>% 
+   mutate(longLink1 = map_chr(SHASUM,getlongLink,y=link01common))  %>% 
+   mutate(longLink2 = map_chr(SHASUM,getlongLink,y=link02common))  %>% 
+   mutate(ShortLink1 = map_chr(longLink1,getShortLink)) %>% 
+   mutate(ShortLink2 = map_chr(longLink2,getShortLink)) %>% 
+   mutate(Shortlink1name = map_chr(ShortLink1, getShortLinkName)) %>% 
+   mutate(Shortlink2name = map_chr(ShortLink2,getShortLinkName))
+
+### Filtering variables
+
+selFName <- str_squish(props$firstName)
+selLName <- str_squish(props$lastName)
+baselink <- props$surveyLinkBase
+
+### VARIABLES FOR CHILD
+
+title.1 <- "Weekly Data for "
+text.1 <- "This barcode (or short link) is to be used at the start of the session. It should take no more than a minute or two to fill out the questionnaire."
+
+survey.1 <- props$surveyId01
+survey.1.idPart <- props$survey01QID
+
+title.2 <- "3-Monthly Data for "
+text.2 <- "This barcode (or short link) is to be used at the start of therapy and then at the end of the every third month treatment. You should expect it would take 5 to 10 minutes to fill out this questionnaire." 
+survey.2 <- props$surveyId02
+survey.2.idPart <- props$survey02QID
+
+# sort dataframe by date and select only those with date greater than today's
+# initData <- (arrange(initData,When))
+# initData <- subset(initData,enddate >= as.Date("2068-03-29"))
+
+if (props$restrictToActive == "Y") {
+  initData <- initData %>% filter(is.na(EndDate))
+}
+
+if (!stri_isempty(selFName) | !stri_isempty(selLName)) {
+  initData <- initData %>% 
+     filter(str_detect(tolower(Name),paste0("\\b",tolower(selFName))) &
+              str_detect(tolower(Surname),paste0("\\b",tolower(selLName))))
+  # restricts dataframe to where firstname and lastname are partial match to 
+  # variables in the props file (leave these empty to turn off this filter)
+  #\\b is used to detect boundary between words (i.e. as \b in regex)
+}
+
+# write out also csv file with shortlinks and other stuff
+csvOutData <- initData %>% 
+   dplyr::select(-one_of(c("Name","Surname","RIO")))
+# necessary to indicate which package select() belongs to
+# because raster (for .png output has select() function too
+
+
+write.csv(csvOutData,file=paste0("./output/","shortLinks_HPD_",format(Sys.time(),"%Y-%b-%d_%H-%M"),".csv"),na="")
+
+
+```
+
+
+
+```{r mainLoop, include=FALSE}
+
+# for loop writing out properties of each training
+# not to be included so that echo from children does not get in here
+# 'out' collects all the output and is put into the document at once - inline 
+# as can be seen below this chunk
+
+out = NULL
+
+if (nrow(initData) < 1) {
+  out <- "# No Data to output"
+} else {
+  for (i in 1 : nrow(initData)) {
+  	oFirstName <- gsub("[\r\n]", "",initData$Name[i])
+  	oLastName <- gsub("[\r\n]", "",initData$Surname[i])
+  	oIDNumber <- gsub("[\r\n]", "",initData$SHASUM[i])
+  	oStartDate <- initData$StartDate[i]
+  	oEndDate <- initData$EndDate[i]
+  	oShortLink1 <- initData$ShortLink1[i]
+  	oShortLink2 <- initData$ShortLink2[i]
+  	oShortLink1name <- initData$Shortlink1name[i]
+  	oShortLink2name <- initData$Shortlink2name[i]
+  	oLongLink1 <- initData$longLink1[i]
+  	oLongLink2 <- initData$longLink2[i]
+  	# print(paste(oFirstName, oLastName,oIDNumber, oStartDate, oEndDate))
+  	out <- c(out, knit_child('patientListChild.rmd'))
+  }
+}
+
+		
+```
+
+`r paste(out, collapse='\n')`
+
+```{r cleanup, include = FALSE}
+
+# file.list <- list.files("tmp/", include.dirs = F, full.names = T, recursive = T)
+# file.remove(file.list)
+
+```
