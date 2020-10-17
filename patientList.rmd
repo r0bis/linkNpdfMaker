@@ -5,7 +5,7 @@ knit: (function(inputFile, encoding) {
    rmarkdown::render(inputFile, 
                      encoding = encoding, 
                      output_dir = "output",
-                     output_file = paste0("patienttList_",
+                     output_file = paste0("patientList_",
                         format(Sys.time(),format="%Y-%m-%d_%H-%M"),
                         ".pdf")) 
                         })
